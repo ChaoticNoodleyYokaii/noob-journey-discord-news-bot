@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from news_fetcher import NewsFetcher
 import asyncio
 
-# Carregar variáveis de ambiente
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -42,14 +41,13 @@ class NewsBot(commands.Bot):
         self.sent_news = load_sent_news()
 
     async def setup_hook(self):
-        # Inicia a task (sem wait_until_ready aqui)
         self.check_news.start()
 
     async def on_ready(self):
         print("ON_READY disparou")
         print(f"Bot conectado como {self.user}")
 
-        # Debug: testar canal
+        # Debug: para testar se o canal foi encontrado 
         try:
             channel = await self.fetch_channel(CHANNEL_ID)
             print(f"Canal encontrado: {channel.name}")
@@ -78,7 +76,7 @@ class NewsBot(commands.Bot):
                     await self.post_news(channel, item)
                     self.sent_news.append(item["id"])
                     save_sent_news(self.sent_news)
-                    await asyncio.sleep(5)  # evitar rate limit
+                    await asyncio.sleep(5)  # rate limit é evitado de ser alcançado
 
     @check_news.before_loop
     async def before_check_news(self):
