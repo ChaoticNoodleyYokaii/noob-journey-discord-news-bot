@@ -72,10 +72,12 @@ python bot.py
 ### Notes
 - This project is for learning and personal use.
 
+- Customization: You can change the news sources by editing the RSS URL list in the code.
+
 - Contributions and suggestions are welcome.
 
 - Do not forget to keep your Discord token private.
-
+  
 ---
 
 ### Motivation
@@ -83,7 +85,7 @@ This bot was created as a personal challenge to learn more about:
 
 - Python
 
-- APIs
+- RSS Feeds & Data Parsing
 
 - Discord bots
 
