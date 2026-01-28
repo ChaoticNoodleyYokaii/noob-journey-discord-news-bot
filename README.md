@@ -9,7 +9,7 @@ I'm still a beginner in programming, so this project represents my experiments, 
 
 ---
 
-## 🚀 Features
+## Features
 
 - **RSS Based:** Fetches news directly from RSS feeds of your favorite tech sites.
 - **Fully Customizable:** The list of news sources is open to modification—you can easily add or remove any RSS feed.
@@ -19,7 +19,7 @@ I'm still a beginner in programming, so this project represents my experiments, 
 
 ---
 
-## 🛠 Technologies
+## Technologies
 
 - Python 3
 - [discord.py](https://github.com/Rapptz/discord.py)
@@ -28,7 +28,7 @@ I'm still a beginner in programming, so this project represents my experiments, 
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 noticias_bot/
 │
@@ -51,7 +51,14 @@ git clone https://github.com/ChaoticNoodleyYokaii/noob-journey-discord-news-bot.
 2. Create a virtual environment
 ```bash
 python3 -m venv venv
+```
+- For Linux/MacOS:
+```bash
 source venv/bin/activate
+```
+- For Windows:
+```bash
+venv\Scripts\activate
 ```
 
 3. Install dependencies
@@ -69,7 +76,7 @@ python bot.py
 
 ---
 
-### Notes
+## Notes
 - This project is for learning and personal use.
 
 - Customization: You can change the news sources by editing the RSS URL list in the code.
@@ -80,7 +87,7 @@ python bot.py
   
 ---
 
-### Motivation
+## Motivation
 This bot was created as a personal challenge to learn more about:
 
 - Python
