@@ -1,66 +1,145 @@
 import feedparser
-import os
 import re
 from typing import List, Dict
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+
 
 class NewsFetcher:
     def __init__(self):
         self.sources = {
-            "windows": "https://www.infomoney.com.br/tudo-sobre/windows/feed/",
-            "linux": "https://diolinux.com.br/feed"
+            "windows": [
+                "https://www.windowslatest.com/feed/"
+            ],
+            "linux": [
+                "https://diolinux.com.br/feed",
+                "https://9to5linux.com/feed/"
+            ]
         }
 
-    def clean_html(self, text: str ) -> str:
-        """Remove tags HTML e limpa o texto."""
-        clean = re.compile('<.*?>')
-        return re.sub(clean, '', text).strip()
+    #UTILIDADES
+
+    def clean_html(self, text: str) -> str:
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text).strip()
+
+    def detect_language(self, title: str) -> str:
+        # Heurística simples
+        pt_keywords = ["windows", "linux", "atualização", "lança", "novo", "versão", "kernel"]
+        for word in pt_keywords:
+            if word in title.lower():
+                return "🇧🇷"
+        return "🇺🇸"
+
+    def parse_date(self, entry) -> datetime:
+        try:
+            if hasattr(entry, "published"):
+                return parsedate_to_datetime(entry.published)
+        except Exception:
+            pass
+        return datetime.utcnow()
+
+    def is_valid_news(self, title: str, category: str) -> bool:
+        title_lower = title.lower()
+
+        if category == "windows":
+            return "windows" in title_lower or "microsoft" in title_lower
+
+        if category == "linux":
+            return any(word in title_lower for word in ["linux", "ubuntu", "debian", "kernel", "fedora"])
+
+        return True
+
+    #MAIN
 
     def fetch_latest_news(self, category: str, limit: int = 3) -> List[Dict]:
-        """Busca as notícias mais recentes das novas fontes em PT-BR."""
         if category not in self.sources:
             return []
 
-        try:
-            feed = feedparser.parse(self.sources[category])
-            news_items = []
+        news_items = []
+        seen_ids = set()
 
-            for entry in feed.entries[:limit]:
-                # Tenta pegar uma imagem do conteúdo ou do feed
-                image_url = None
-                if 'media_content' in entry:
-                    image_url = entry.media_content[0]['url']
-                elif 'summary' in entry:
-                    img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.summary)
-                    if img_match:
-                        image_url = img_match.group(1)
-                
-                # Se ainda não achou imagem (comum no Diolinux), tenta no content
-                if not image_url and 'content' in entry:
-                    img_match = re.search(r'<img [^>]*src="([^"]+)"', entry[ 'content' ][0].value)
-                    if img_match:
-                        image_url = img_match.group(1)
+        for source in self.sources[category]:
+            try:
+                feed = feedparser.parse(source)
 
-                summary = self.clean_html(entry.summary if 'summary' in entry else "")
-                
-                news_items.append({
-                    "id": entry.id if hasattr(entry, 'id') else entry.link,
-                    "title": entry.title,
-                    "link": entry.link,
-                    "summary": summary[:300] + "...",
-                    "image_url": image_url,
-                    "published": entry.published if hasattr(entry, 'published') else "",
-                    "category": category
-                })
-            return news_items
-        except Exception as e:
-            print(f"Erro ao buscar notícias de {category}: {e}")
-            return []
+                if not feed.entries:
+                    print(f"[WARN] Feed vazio ou inacessível: {source}")
+                    continue
+
+                for entry in feed.entries:
+                    try:
+                        title = entry.title
+                        link = entry.link
+                        news_id = entry.id if hasattr(entry, "id") else link
+
+                        if news_id in seen_ids:
+                            continue
+
+                        if not self.is_valid_news(title, category):
+                            continue
+
+                        seen_ids.add(news_id)
+
+                        image_url = None
+
+                        if "media_content" in entry:
+                            image_url = entry.media_content[0]["url"]
+                        elif "summary" in entry:
+                            img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.summary)
+                            if img_match:
+                                image_url = img_match.group(1)
+
+                        if not image_url and "content" in entry:
+                            img_match = re.search(
+                                r'<img [^>]*src="([^"]+)"',
+                                entry["content"][0].value
+                            )
+                            if img_match:
+                                image_url = img_match.group(1)
+
+                        summary = self.clean_html(entry.summary if "summary" in entry else "")
+
+                        published_date = self.parse_date(entry)
+
+                        lang_emoji = self.detect_language(title)
+
+                        news_items.append({
+                            "id": news_id,
+                            "title": f"{lang_emoji} {title}",
+                            "link": link,
+                            "summary": summary[:300] + "...",
+                            "image_url": image_url,
+                            "published": published_date.strftime("%d/%m/%Y %H:%M"),
+                            "category": category,
+                            "date_obj": published_date
+                        })
+
+                    except Exception as item_error:
+                        print(f"[WARN] Erro ao processar notícia individual: {item_error}")
+                        continue
+
+            except Exception as feed_error:
+                print(f"[ERROR] Erro ao acessar feed {source}: {feed_error}")
+                continue
+
+        # Ordenar por data (mais recente primeiro)
+        news_items.sort(key=lambda x: x["date_obj"], reverse=True)
+
+        # Limitar quantidade final
+        return news_items[:limit]
+
+
+#TESTE
 
 if __name__ == "__main__":
     fetcher = NewsFetcher()
-    print("Testando novas fontes em Português...")
-    for cat in ["windows", "linux"]:
-        news = fetcher.fetch_latest_news(cat, limit=1)
-        if news:
-            print(f"[{cat.upper()}] {news[0]['title']}")
+    print("Testando...\n")
 
+    for cat in ["windows", "linux"]:
+        news = fetcher.fetch_latest_news(cat, limit=3)
+        if news:
+            for n in news:
+                print(f"[{cat.upper()}] {n['title']} ({n['published']})")
+        else:
+            print(f"[{cat.upper()}] Nenhuma notícia encontrada.")
