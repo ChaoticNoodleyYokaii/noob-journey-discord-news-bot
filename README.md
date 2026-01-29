@@ -1,4 +1,4 @@
-# Winux-chan — Discord News Bot
+# Winux-chan: Discord News Bot
 
 **A Curious Beginner’s Journey Building a Discord News Bot**
 
