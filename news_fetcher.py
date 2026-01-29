@@ -4,7 +4,7 @@ from typing import List, Dict
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
-
+# Os links abaixos podem ser editados de acordo com o proposito
 class NewsFetcher:
     def __init__(self):
         self.sources = {
@@ -17,7 +17,7 @@ class NewsFetcher:
             ]
         }
 
-    #UTILIDADES
+    # ---------------- UTILIDADES ---------------- #
 
     def clean_html(self, text: str) -> str:
         clean = re.compile("<.*?>")
@@ -50,7 +50,7 @@ class NewsFetcher:
 
         return True
 
-    #MAIN
+    # ---------------- MAIN ---------------- #
 
     def fetch_latest_news(self, category: str, limit: int = 3) -> List[Dict]:
         if category not in self.sources:
@@ -130,11 +130,11 @@ class NewsFetcher:
         return news_items[:limit]
 
 
-#TESTE
+# ---------------- TESTE LOCAL ---------------- #
 
 if __name__ == "__main__":
     fetcher = NewsFetcher()
-    print("Testando...\n")
+    print("Testando versão PREMIUM...\n")
 
     for cat in ["windows", "linux"]:
         news = fetcher.fetch_latest_news(cat, limit=3)
