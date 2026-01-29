@@ -6,15 +6,16 @@ from dotenv import load_dotenv
 from news_fetcher import NewsFetcher
 import asyncio
 
-# Carregar variáveis de ambiente
+# ENV
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 3600))
+
 SENT_NEWS_FILE = "sent_news.json"
 CONFIG_FILE = "server_config.json"
 
 
+# FILE UTILS
 def load_sent_news():
     if os.path.exists(SENT_NEWS_FILE):
         with open(SENT_NEWS_FILE, "r") as f:
@@ -24,7 +25,7 @@ def load_sent_news():
 
 def save_sent_news(sent_list):
     with open(SENT_NEWS_FILE, "w") as f:
-        json.dump(sent_list[-100:], f, indent=4)
+        json.dump(sent_list[-200:], f, indent=4)
 
 
 def load_configs():
@@ -33,7 +34,7 @@ def load_configs():
             with open(CONFIG_FILE, "r") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            print("Erro ao ler server_config.json, usando config vazia.")
+            print("Erro ao ler server_config.json. Usando config vazia.")
             return {}
     return {}
 
@@ -43,6 +44,7 @@ def save_configs(configs):
         json.dump(configs, f, indent=4)
 
 
+# MAIN 
 class NewsBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -53,26 +55,37 @@ class NewsBot(commands.Bot):
 
         self.fetcher = NewsFetcher()
         self.sent_news = load_sent_news()
-        self.configs = load_configs()  #ServerConfig
+        self.configs = load_configs()
 
     async def setup_hook(self):
         self.check_news.start()
 
     async def on_ready(self):
-        print(f"Bot conectado como {self.user}")
+        print(f"✅ Bot conectado como {self.user}")
+        print("📦 Configs carregadas:", self.configs)
 
+    # TASK LOOP
     @tasks.loop(seconds=CHECK_INTERVAL)
     async def check_news(self):
-
-        for guild_id, config in self.configs.items():
+        for guild_id, config in list(self.configs.items()):
 
             channel_id = config.get("channel_id")
             if not channel_id:
                 continue
 
-            channel = self.get_channel(channel_id)
-            if not channel:
-                print(f"Canal {channel_id} não encontrado.")
+            # SEARCH CHANNEL
+            try:
+                channel = await self.fetch_channel(channel_id)
+            except discord.NotFound:
+                print(f"❌ Canal {channel_id} não existe. Removendo da config.")
+                del self.configs[guild_id]
+                save_configs(self.configs)
+                continue
+            except discord.Forbidden:
+                print(f"⛔ Sem permissão para acessar canal {channel_id}.")
+                continue
+            except discord.HTTPException as e:
+                print(f"⚠️ Erro HTTP ao buscar canal {channel_id}: {e}")
                 continue
 
             categories = []
@@ -82,7 +95,11 @@ class NewsBot(commands.Bot):
                 categories.append("linux")
 
             for category in categories:
-                news_items = self.fetcher.fetch_latest_news(category)
+                try:
+                    news_items = self.fetcher.fetch_latest_news(category)
+                except Exception as e:
+                    print(f"Erro ao buscar notícias ({category}): {e}")
+                    continue
 
                 for item in reversed(news_items):
                     if item["id"] not in self.sent_news:
@@ -91,6 +108,7 @@ class NewsBot(commands.Bot):
                         save_sent_news(self.sent_news)
                         await asyncio.sleep(5)
 
+    # SEND NEWS
     async def post_news(self, channel, item):
         color = discord.Color.blue() if item["category"] == "windows" else discord.Color.orange()
 
@@ -101,7 +119,7 @@ class NewsBot(commands.Bot):
             color=color
         )
 
-        if item["image_url"]:
+        if item.get("image_url"):
             embed.set_image(url=item["image_url"])
 
         embed.set_footer(text=f"Fonte: {item['category'].capitalize()} | {item['published']}")
@@ -112,6 +130,7 @@ class NewsBot(commands.Bot):
 bot = NewsBot()
 
 
+# COMMANDS
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def setchannel(ctx):
@@ -126,11 +145,32 @@ async def setchannel(ctx):
 
     save_configs(bot.configs)
 
-    await ctx.send(f"Canal de notícias configurado: {ctx.channel.mention}")
+    await ctx.send(f"✅ Canal configurado para notícias: {ctx.channel.mention}")
 
 
+@bot.command()
+async def showconfig(ctx):
+    guild_id = str(ctx.guild.id)
+    config = bot.configs.get(guild_id)
+
+    if not config:
+        await ctx.send("⚠️ Este servidor ainda não foi configurado. Use `!setchannel`.")
+        return
+
+    channel = bot.get_channel(config["channel_id"])
+    channel_name = channel.mention if channel else "Canal inválido"
+
+    await ctx.send(
+        f"📡 **Configuração atual:**\n"
+        f"Canal: {channel_name}\n"
+        f"Windows: {config.get('windows')}\n"
+        f"Linux: {config.get('linux')}"
+    )
+
+
+# HELLO WORLD?
 if __name__ == "__main__":
     if not TOKEN:
-        print("Erro: DISCORD_TOKEN não configurado.")
+        print("❌ DISCORD_TOKEN não configurado.")
     else:
         bot.run(TOKEN)
