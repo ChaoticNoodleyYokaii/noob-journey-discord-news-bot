@@ -57,7 +57,9 @@ class NewsBot(commands.Bot):
             "Lendo RSS",
             "Compilando Kernel",
             "Atualizando Windows",
-            "Servindo notícias quentinhas ☕"
+            "Servindo notícias quentinhas ☕",
+            "CHAMA NA DM, VIDAAA",
+            "!helpwinux"
         ]
         self.status_index = 0
 
@@ -269,7 +271,7 @@ async def helpwinux(ctx):
         name="📡 Configuração",
         value=
         "`!setchannel` - Define o canal atual\n"
-        "`!showconfig` - Mostra a configuração da Winux-chan
+        "`!showconfig` - Mostra a config da Winux-chan\n" 
         "`!setrole windows @Role` - Adiciona cargo p/ Windows\n"
         "`!setrole linux @Role` - Adiciona cargo p/ Linux\n"
         "`!removerole windows @Role` - Remove cargo\n"
