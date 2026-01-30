@@ -37,7 +37,7 @@ noticias_bot/\n
 ├── news_fetcher.py\n
 ├── server_config.json\n
 ├── sent_news.json\n
-├── .env\n
+├── .env \n
 └── venv/
 
 ---
