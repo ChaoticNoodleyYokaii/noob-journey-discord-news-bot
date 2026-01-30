@@ -31,13 +31,13 @@ The bot is now configurable per server via commands, so no code editing is requi
 
 ## Project Structure
 
-noticias_bot/
+noticias_bot/\n
 │
-├── bot.py
-├── news_fetcher.py
-├── server_config.json
-├── sent_news.json
-├── .env
+├── bot.py\n
+├── news_fetcher.py\n
+├── server_config.json\n
+├── sent_news.json\n
+├── .env\n
 └── venv/
 
 ---
