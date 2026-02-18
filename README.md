@@ -153,7 +153,7 @@ Veja o arquivo:
 See the file:
 LICENSE
 
-##🎯 Motivação | Motivation
+## 🎯 Motivação | Motivation
 
 Este projeto foi criado como um desafio pessoal para aprender mais sobre:
 This project was created as a personal challenge to learn more about:
