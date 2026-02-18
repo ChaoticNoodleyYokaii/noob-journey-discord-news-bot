@@ -142,7 +142,7 @@ noticias_bot/
 ├── .env
 └── venv
 ```
-##🤝 Colaborador | Contributor
+## 🤝 Colaborador | Contributor
 <table> <tr> <td align="center"> <a href="https://github.com/ChaoticNoodley"> <img src="https://github.com/ChaoticNoodley.png" width="100px;" alt="Foto do autor"/><br> <sub> <b>Bruno Ceroni</b> </sub> </a> </td> </tr> </table>
 
 ## 📝 Licença | License
