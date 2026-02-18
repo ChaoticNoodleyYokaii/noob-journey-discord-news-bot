@@ -1,5 +1,6 @@
 .env
-sent_news.json
-server_config.json
 venv/
 __pycache__/
+.cache/
+.local/
+*.json
