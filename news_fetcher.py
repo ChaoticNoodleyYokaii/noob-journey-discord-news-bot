@@ -4,7 +4,7 @@ from typing import List, Dict
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
-# Os link abaixo, podem ser alterados conforme o proposito
+# Os links abaixo podem ser alterados conforme o propósito
 class NewsFetcher:
     def __init__(self):
         self.sources = {
@@ -15,6 +15,11 @@ class NewsFetcher:
                 "https://diolinux.com.br/feed",
                 "https://9to5linux.com/feed/"
             ]
+        }
+
+        # USER AGENT (evita bloqueios)
+        self.headers = {
+            "User-Agent": "Winux-chan RSS Bot/1.0 (+https://github.com/ChaoticNoodley/noob-journey-discord-news-bot)"
         }
 
     # UTIL
@@ -40,7 +45,10 @@ class NewsFetcher:
 
         for source in self.sources[category]:
             try:
-                feed = feedparser.parse(source)
+                feed = feedparser.parse(
+                    source,
+                    request_headers=self.headers
+                )
 
                 if not feed.entries:
                     print(f"[WARN] Feed vazio ou inacessível: {source}")
@@ -96,11 +104,13 @@ class NewsFetcher:
                 print(f"[ERROR] Erro ao acessar feed {source}: {feed_error}")
                 continue
 
+        # Ordenar por data (mais recente primeiro)
         news_items.sort(key=lambda x: x["date_obj"], reverse=True)
+
         return news_items[:limit]
 
 
-# TEST LOCAL
+# TESTE LOCAL
 if __name__ == "__main__":
     fetcher = NewsFetcher()
     print("Testando...\n")
