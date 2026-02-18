@@ -151,7 +151,7 @@ This project is open source and free for anyone to use, modify, and distribute f
 
 Veja o arquivo:
 See the file:
-LICENSE
+[LICENSE](LICENSE)
 
 ## 🎯 Motivação | Motivation
 
