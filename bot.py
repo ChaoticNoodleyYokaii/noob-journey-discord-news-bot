@@ -36,13 +36,18 @@ def save_configs(configs):
     with open(CONFIG_FILE, "w") as f:
         json.dump(configs, f, indent=4)
 
+
 # MAIN
 class NewsBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.guilds = True
 
-        super().__init__(command_prefix=None, intents=intents, help_command=None)
+        super().__init__(
+            command_prefix=None,
+            intents=intents,
+            help_command=None
+        )
 
         self.fetcher = NewsFetcher()
         self.sent_news = load_sent_news()
@@ -84,12 +89,15 @@ class NewsBot(commands.Bot):
 
             try:
                 channel = await self.fetch_channel(channel_id)
-            except:
+            except Exception as e:
+                print(f"Erro ao buscar canal: {e}")
                 continue
 
             categories = []
-            if config.get("windows"): categories.append("windows")
-            if config.get("linux"): categories.append("linux")
+            if config.get("windows"):
+                categories.append("windows")
+            if config.get("linux"):
+                categories.append("linux")
 
             for category in categories:
                 news_items = self.fetcher.fetch_latest_news(category)
@@ -130,7 +138,7 @@ class NewsBot(commands.Bot):
 
 bot = NewsBot()
 
-# /Commands
+# SLASH COMMANDS
 
 @bot.tree.command(name="setchannel", description="Define o canal de notícias")
 @app_commands.checks.has_permissions(administrator=True)
