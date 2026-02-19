@@ -44,7 +44,6 @@ class NewsBot(commands.Bot):
 
         super().__init__(command_prefix=None, intents=intents, help_command=None)
 
-        self.tree = app_commands.CommandTree(self)
         self.fetcher = NewsFetcher()
         self.sent_news = load_sent_news()
         self.configs = load_configs()
