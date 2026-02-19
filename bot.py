@@ -1,13 +1,11 @@
 import discord
 from discord.ext import tasks, commands
-from discord import app_commands
 import os
 import json
 from dotenv import load_dotenv
 from news_fetcher import NewsFetcher
 import asyncio
 
-# configs
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 3600))
@@ -15,16 +13,18 @@ CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 3600))
 SENT_NEWS_FILE = "sent_news.json"
 CONFIG_FILE = "server_config.json"
 
-# utilities
+
 def load_sent_news():
     if os.path.exists(SENT_NEWS_FILE):
         with open(SENT_NEWS_FILE, "r") as f:
             return json.load(f)
     return []
 
+
 def save_sent_news(sent_list):
     with open(SENT_NEWS_FILE, "w") as f:
         json.dump(sent_list[-200:], f, indent=4)
+
 
 def load_configs():
     if os.path.exists(CONFIG_FILE):
@@ -32,12 +32,12 @@ def load_configs():
             return json.load(f)
     return {}
 
+
 def save_configs(configs):
     with open(CONFIG_FILE, "w") as f:
         json.dump(configs, f, indent=4)
 
 
-# MAIN
 class NewsBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -54,17 +54,25 @@ class NewsBot(commands.Bot):
         self.configs = load_configs()
 
         self.status_list = [
-            "Modificando o Proton",
             "Lendo RSS",
             "Compilando Kernel",
+            "Atualizando o Windows",
             "Servindo notícias quentinhas ☕",
             "/help"
         ]
         self.status_index = 0
 
     async def setup_hook(self):
+        print("📦 Carregando cogs...")
+
+        for file in os.listdir("./cogs"):
+            if file.endswith(".py"):
+                await self.load_extension(f"cogs.{file[:-3]}")
+                print(f"✅ Cog carregado: {file}")
+
         await self.tree.sync()
         print("✅ Slash commands sincronizados")
+
         self.check_news.start()
         self.rotate_status.start()
 
@@ -138,84 +146,7 @@ class NewsBot(commands.Bot):
 
 bot = NewsBot()
 
-# SLASH COMMANDS
 
-@bot.tree.command(name="setchannel", description="Define o canal de notícias")
-@app_commands.checks.has_permissions(administrator=True)
-async def setchannel(interaction: discord.Interaction):
-    gid = str(interaction.guild.id)
-
-    bot.configs.setdefault(gid, {})
-    bot.configs[gid]["channel_id"] = interaction.channel.id
-    bot.configs[gid]["windows"] = True
-    bot.configs[gid]["linux"] = True
-    save_configs(bot.configs)
-
-    await interaction.response.send_message(
-        f"✅ Canal configurado: {interaction.channel.mention}",
-        ephemeral=True
-    )
-
-
-@bot.tree.command(name="showconfig", description="Mostra a configuração do servidor")
-async def showconfig(interaction: discord.Interaction):
-    guild_id = str(interaction.guild.id)
-    config = bot.configs.get(guild_id)
-
-    if not config:
-        await interaction.response.send_message("Servidor não configurado.", ephemeral=True)
-        return
-
-    channel = bot.get_channel(config["channel_id"])
-    channel_name = channel.mention if channel else "Canal inválido"
-
-    await interaction.response.send_message(
-        f"📡 **Configuração atual:**\n"
-        f"Canal: {channel_name}\n"
-        f"Windows: {config.get('windows')}\n"
-        f"Linux: {config.get('linux')}",
-        ephemeral=True
-    )
-
-
-@bot.tree.command(name="testnews", description="Testa envio de notícias")
-@app_commands.checks.has_permissions(administrator=True)
-async def testnews(interaction: discord.Interaction):
-    await interaction.response.send_message("🔎 Testando envio...", ephemeral=True)
-
-    for cat in ["windows", "linux"]:
-        news = bot.fetcher.fetch_latest_news(cat, limit=1)
-        if news:
-            await bot.post_news(interaction.channel, news[0], str(interaction.guild.id))
-
-
-@bot.tree.command(name="latest", description="Mostra a última notícia")
-@app_commands.describe(category="windows ou linux")
-async def latest(interaction: discord.Interaction, category: str):
-    category = category.lower()
-
-    if category not in ["windows", "linux"]:
-        await interaction.response.send_message("Use windows ou linux", ephemeral=True)
-        return
-
-    news = bot.fetcher.fetch_latest_news(category, limit=1)
-    if not news:
-        await interaction.response.send_message("Nenhuma notícia encontrada.")
-        return
-
-    item = news[0]
-
-    embed = discord.Embed(
-        title=item["title"],
-        url=item["link"],
-        description=item["summary"],
-        color=discord.Color.blue() if category == "windows" else discord.Color.orange()
-    )
-
-    await interaction.response.send_message(embed=embed)
-
-
-# run bot
 if __name__ == "__main__":
     if not TOKEN:
         print("❌ DISCORD_TOKEN não encontrado")
